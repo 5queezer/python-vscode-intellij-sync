@@ -6,6 +6,7 @@ import JSONC from 'tiny-jsonc';
 
 // Import functions to test from extension
 import { sanitizeFileName, generateIntelliJConfig } from '../../xmlGenerator';
+import { VSCodeLaunchConfig } from '../../types';
 
 
 describe('Python Debug Config Sync', () => {
@@ -17,16 +18,17 @@ describe('Python Debug Config Sync', () => {
     });
 
     it('should generate correct XML for program config', () => {
-        const config = {
+        const config: VSCodeLaunchConfig = {
             name: 'Python: Current File',
             type: 'python',
+            request: 'launch',
             program: '/path/to/main.py',
             args: ['--debug', '--verbose'],
             env: { DEBUG: 'true' },
             cwd: '/workspace'
         };
 
-        const xml = generateIntelliJConfig(config, '/usr/bin/python');
+        const xml = generateIntelliJConfig(config, '/usr/bin/python', 'test-sdk');
 
         assert.ok(xml.includes('name="Python: Current File"'));
         assert.ok(xml.includes('SCRIPT_NAME" value="/path/to/main.py"'));
@@ -37,15 +39,16 @@ describe('Python Debug Config Sync', () => {
     });
 
     it('should generate correct XML for module config', () => {
-        const config = {
+        const config: VSCodeLaunchConfig = {
             name: 'Python: Module',
             type: 'python',
+            request: 'launch',
             module: 'myapp.cli',
             args: ['start'],
             env: { ENV: 'dev' }
         };
 
-        const xml = generateIntelliJConfig(config, '/usr/bin/python');
+        const xml = generateIntelliJConfig(config, '/usr/bin/python', 'test-sdk');
 
         assert.ok(xml.includes('name="Python: Module"'));
         assert.ok(xml.includes('MODULE_NAME" value="myapp.cli"'));
@@ -69,9 +72,10 @@ describe('Python Debug Config Sync', () => {
     });
 
     it('should handle empty config values', () => {
-        const config = {
+        const config: VSCodeLaunchConfig = {
             name: 'Simple Config',
             type: 'python',
+            request: 'launch',
             program: '/main.py'
         };
 
@@ -104,13 +108,12 @@ describe('Python Debug Config Sync', () => {
         assert.ok(config.configurations.length > 0, 'Should have at least one configuration');
         
         // Test specific configuration
-        const backtestingConfig = config.configurations.find((c: any) =>
-            c.name === 'backtesting SimpleHFTStrategy'
+        const currentFileConfig = config.configurations.find((c: any) =>
+            c.name === 'Python: Current File'
         );
-        assert.ok(backtestingConfig, 'Should find SimpleHFTStrategy configuration');
-        assert.strictEqual(backtestingConfig.type, 'debugpy');
-        assert.strictEqual(backtestingConfig.module, 'freqtrade.main');
-        assert.ok(Array.isArray(backtestingConfig.args), 'Should have args array');
+        assert.ok(currentFileConfig, 'Should find Python: Current File configuration');
+        assert.strictEqual(currentFileConfig.type, 'debugpy');
+        assert.strictEqual(currentFileConfig.program, '${file}');
     });
 
     it('should load and parse JSON with comments from test-data/launch.json and convert it into valid pycharm xml run config', () => {
@@ -144,7 +147,7 @@ describe('Python Debug Config Sync', () => {
         // Test conversion of each Python configuration to PyCharm XML
         pythonConfigs.forEach((config: any) => {
             if (config.request === 'launch' && (config.program || config.module)) {
-                const xml = generateIntelliJConfig(config, '/usr/bin/python');
+                const xml = generateIntelliJConfig(config, '/usr/bin/python', 'freqtrade');
                 
                 // Verify the XML structure
                 assert.ok(xml.includes('<component name="ProjectRunConfigurationManager">'),
@@ -197,17 +200,17 @@ describe('Python Debug Config Sync', () => {
         });
         
         // Test specific configuration from test data
-        const backtestingConfig = pythonConfigs.find((c: any) =>
-            c.name === 'backtesting WisdomFlowStrategy'
+        const moduleConfig = pythonConfigs.find((c: any) =>
+            c.name === 'Python: Module'
         );
-        assert.ok(backtestingConfig, 'Should find WisdomFlowStrategy configuration');
+        assert.ok(moduleConfig, 'Should find Python: Module configuration');
         
-        const xml = generateIntelliJConfig(backtestingConfig, '/usr/bin/python');
-        assert.ok(xml.includes('name="backtesting WisdomFlowStrategy"'),
+        const xml = generateIntelliJConfig(moduleConfig, '/usr/bin/python', 'test-sdk');
+        assert.ok(xml.includes('name="Python: Module"'),
             'XML should contain the correct configuration name');
-        assert.ok(xml.includes('MODULE_NAME" value="freqtrade"'),
-            'XML should contain the freqtrade module');
-        assert.ok(xml.includes('backtesting'),
-            'XML should contain backtesting parameter');
+        assert.ok(xml.includes('MODULE_NAME" value="main"'),
+            'XML should contain the main module');
+        assert.ok(xml.includes('MODULE_MODE" value="true"'),
+            'XML should set MODULE_MODE to true for module configs');
     });
 });

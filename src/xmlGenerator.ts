@@ -1,4 +1,6 @@
-export function generateIntelliJConfig(config: any, pythonPath: string): string {
+import { VSCodeLaunchConfig } from './types';
+
+export function generateIntelliJConfig(config: VSCodeLaunchConfig, pythonPath: string, sdkName?: string): string {
     const isModule = config.module;
     const scriptPath = config.program || '';
     const args = config.args?.join(' ') || '';
@@ -12,12 +14,13 @@ export function generateIntelliJConfig(config: any, pythonPath: string): string 
 
     return `<component name="ProjectRunConfigurationManager">
   <configuration default="false" name="${config.name}" type="PythonConfigurationType" factoryName="Python">
-    <module name="" />
+    <module name="${sdkName || ''}" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
 ${envXml}    </envs>
     <option name="SDK_HOME" value="${pythonPath}" />
+    <option name="SDK_NAME" value="${sdkName || ''}" />
     <option name="WORKING_DIRECTORY" value="${cwd}" />
     <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />

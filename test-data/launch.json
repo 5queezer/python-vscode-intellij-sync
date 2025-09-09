@@ -1,221 +1,34 @@
 {
+    // Test comment for launch configuration
+    "version": "0.2.0",
     "configurations": [
         {
-            "name": "backtesting WisdomFlowStrategy",
+            "name": "Python: Current File",
             "type": "debugpy",
             "request": "launch",
-            "module": "freqtrade",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Python: Module",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "main",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Python: Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
             "args": [
-                "backtesting",
-                "--userdir",
-                "/home/christian/Projects/user_data",
-                "--config",
-                "/home/christian/Projects/user_data/configs/ensemble_classifier_config.json",
-                "--config",
-                "configs/logging_config.json",
-                "--strategy",
-                "WisdomFlowStrategy",
-                "--freqaimodel",
-                "EnsembleClassifier",
-                "--timerange",
-                "20250501-20250801",
-                "--cache",
-                "none",
-                "--enable-protections",
-                "--breakdown",
-                "day",
+                "tests/",
                 "-v"
             ],
-            "preLaunchTask": ""
-        },
-        {
-            "name": "hyperopt EnhancedBambooAI_SentimentROI",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "freqtrade.main",
-            "env": {
-                "FREQTRADE__FREQAI__IDENTIFIER": "EnhancedBambooAI_SentimentROI",
-                "LUNARCRUSH_BEARER_TOKEN": "h2q8uz4ijodj9mkypdcm1zm9ngm5ygyezt7trq22"
-            },
-            "args": [
-                "hyperopt",
-                "--userdir",
-                "/home/christian/Projects/user_data",
-                "--config",
-                "/home/christian/Projects/user_data/configs/model_tuning_aggressive.json",
-                "--strategy",
-                "EnhancedBambooAI_SentimentROI",
-                "--freqaimodel",
-                "CatboostClassifier",
-                "--timerange",
-                "20250728-20250828",
-                "--enable-protections",
-                "--hyperopt-loss",
-                "CalmarHyperOptLoss",
-                "--epochs",
-                "1000"
-            ],
-            "preLaunchTask": ""
-        },
-        {
-            "name": "backtesting EnhancedBambooAI_SentimentROI",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "freqtrade.main",
-            "env": {
-                "FREQTRADE__FREQAI__IDENTIFIER": "EnhancedBambooAI_SentimentROI",
-                "LUNARCRUSH_BEARER_TOKEN": "h2q8uz4ijodj9mkypdcm1zm9ngm5ygyezt7trq22"
-            },
-            "args": [
-                "backtesting",
-                "--userdir",
-                "/home/christian/Projects/user_data",
-                "--config",
-                "/home/christian/Projects/user_data/configs/model_tuning_aggressive.json",
-                "--strategy",
-                "EnhancedBambooAI_SentimentROI",
-                "--freqaimodel",
-                "CatboostClassifier",
-                "--timerange",
-                "20250801-20250815",
-                "--cache",
-                "none",
-                "--enable-protections",
-                "--breakdown",
-                "day"
-            ],
-            "preLaunchTask": ""
-        },
-        {
-            "name": "dry-run EnhancedHFTStrategy",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "/home/christian/Projects/freqai/freqtrade/main.py",
-            "args": [
-                "trade",
-                "--dry-run",
-                "--userdir",
-                "/home/christian/Projects/user_data",
-                "--config",
-                "/home/christian/Projects/user_data/configs/config_EnhancedHFTStrategy.json",
-                "--strategy",
-                "EnhancedHFTStrategy",
-                "--freqaimodel",
-                "PyTorchMLPRegressor",
-                "-v"
-            ],
-            "preLaunchTask": ""
-        },
-        {
-            "name": "backtesting EnhancedHFTStrategy",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "/home/christian/Projects/freqai/freqtrade/main.py",
-            "args": [
-                "backtesting",
-                "--userdir",
-                "/home/christian/Projects/user_data",
-                "--config",
-                "/home/christian/Projects/user_data/configs/config_EnhancedHFTStrategy.json",
-                "--strategy",
-                "EnhancedHFTStrategy",
-                "--freqaimodel",
-                "PyTorchMLPRegressor",
-                "--timerange",
-                "20250801-20250815",
-                "--cache",
-                "none",
-                "--enable-protections",
-                "--breakdown",
-                "day",
-                "-v"
-            ],
-            "preLaunchTask": ""
-        },
-        {
-            "name": "backtesting SimpleHFTStrategy",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "freqtrade.main",
-            // "cwd": "/home/christian/Projects/freqai",
-            "args": [
-                "backtesting",
-                "--userdir",
-                "/home/christian/Projects/user_data",
-                "--config",
-                "/home/christian/Projects/user_data/configs/config_EnhancedHFTStrategy_Catboost.json",
-                "--strategy",
-                "SimpleHFTStrategy",
-                "--freqaimodel",
-                "CatboostRegressorMultiTarget",
-                "--timerange",
-                "20250801-20250808",
-                "--cache",
-                "none",
-                "--enable-protections",
-                "--breakdown",
-                "day",
-                "-v"
-            ],
-            "preLaunchTask": ""
-        },
-        {
-            "name": "backtesting ComprehensiveAstrologyFreqAIStrategy",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "freqtrade",
-            "env": {
-                "SE_EPHE_PATH": "/home/christian/Projects/swisseph/ephe"
-            },
-            "args": [
-                "backtesting",
-                "--userdir",
-                "/home/christian/Projects/user_data",
-                "--config",
-                "/home/christian/Projects/user_data/configs/config_ComprehensiveAstrologyFreqAIStrategy.json",
-                "--strategy",
-                "ComprehensiveAstrologyFreqAIStrategy",
-                "--freqaimodel",
-                "XGBoostAstrologyMultiTarget",
-                "--timerange",
-                "20250801-20250808",
-                "--cache",
-                "none",
-                "--enable-protections",
-                "--breakdown",
-                "day",
-                "-v"
-            ],
-            "preLaunchTask": ""
-        },
-        {
-            "name": "backtesting PatternRecognitionStrategy",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "freqtrade",
-            "env": {
-                "SE_EPHE_PATH": "/home/christian/Projects/swisseph/ephe"
-            },
-            "args": [
-                "backtesting",
-                "--userdir",
-                "/home/christian/Projects/user_data",
-                "--config",
-                "/home/christian/Projects/user_data/configs/config_PatternRecognitionStrategy.json",
-                "--strategy",
-                "PatternRecognitionStrategy",
-                "--freqaimodel",
-                "PatternRecognitionModel",
-                "--timerange",
-                "20250801-20250808",
-                "--cache",
-                "none",
-                "--enable-protections",
-                "--breakdown",
-                "day",
-                "-v"
-            ],
-            "preLaunchTask": ""
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

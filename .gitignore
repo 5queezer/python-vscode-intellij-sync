@@ -6,3 +6,5 @@ src/*.js.map
 build/*.vsix
 
 coverage/*
+
+!test-data/.idea

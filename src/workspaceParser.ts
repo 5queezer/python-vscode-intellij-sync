@@ -2,13 +2,19 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as xml2js from 'xml2js';
 
+/**
+ * Interface for SDK information extracted from IntelliJ IDEA configuration files
+ */
 export interface SDKInfo {
+    /** SDK home path, typically extracted from workspace.xml */
     sdkHome?: string;
+    /** SDK name, extracted with priority: misc.xml Black component > misc.xml ProjectRootManager > workspace.xml */
     sdkName?: string;
 }
 
 /**
- * Extracts SDK_HOME and SDK_NAME values from .idea/workspace.xml file
+ * Extracts SDK_HOME and SDK_NAME values from .idea/misc.xml and .idea/workspace.xml files
+ * Priority order: misc.xml Black component sdkName > misc.xml ProjectRootManager project-jdk-name > workspace.xml SDK_NAME
  * @param workspacePath Path to the workspace root directory
  * @returns Promise<SDKInfo> containing SDK information or empty object if not found
  */
@@ -29,7 +35,16 @@ export async function extractSDKFromWorkspace(workspacePath: string): Promise<SD
         });
 
         const result = await parser.parseStringPromise(xmlContent);
-        return extractSDKFromParsedXML(result);
+        const workspaceSDK = extractSDKFromParsedXML(result);
+        
+        // Get SDK info from misc.xml with priority
+        const miscSDK = extractSDKFromMiscXML(workspacePath);
+        
+        // Merge with priority: misc.xml sdkName > workspace.xml, but keep workspace.xml sdkHome
+        return {
+            sdkHome: workspaceSDK.sdkHome,
+            sdkName: miscSDK.sdkName || workspaceSDK.sdkName
+        };
     } catch (error) {
         console.error(`Error parsing workspace.xml: ${error}`);
         return {};
@@ -38,6 +53,7 @@ export async function extractSDKFromWorkspace(workspacePath: string): Promise<SD
 
 /**
  * Synchronous version of extractSDKFromWorkspace
+ * Priority order: misc.xml Black component sdkName > misc.xml ProjectRootManager project-jdk-name > workspace.xml SDK_NAME
  * @param workspacePath Path to the workspace root directory
  * @returns SDKInfo containing SDK information or empty object if not found
  */
@@ -65,7 +81,16 @@ export function extractSDKFromWorkspaceSync(workspacePath: string): SDKInfo {
             result = parsed;
         });
 
-        return extractSDKFromParsedXML(result);
+        const workspaceSDK = extractSDKFromParsedXML(result);
+        
+        // Get SDK info from misc.xml with priority
+        const miscSDK = extractSDKFromMiscXML(workspacePath);
+        
+        // Merge with priority: misc.xml sdkName > workspace.xml, but keep workspace.xml sdkHome
+        return {
+            sdkHome: workspaceSDK.sdkHome,
+            sdkName: miscSDK.sdkName || workspaceSDK.sdkName
+        };
     } catch (error) {
         console.error(`Error parsing workspace.xml: ${error}`);
         return {};
@@ -73,7 +98,83 @@ export function extractSDKFromWorkspaceSync(workspacePath: string): SDKInfo {
 }
 
 /**
- * Extracts SDK information from parsed XML object
+ * Extracts SDK information from .idea/misc.xml file
+ * @param workspacePath Path to the workspace root directory
+ * @returns SDKInfo containing SDK information from misc.xml or empty object if not found
+ */
+function extractSDKFromMiscXML(workspacePath: string): SDKInfo {
+    const miscXmlPath = path.join(workspacePath, '.idea', 'misc.xml');
+    
+    if (!fs.existsSync(miscXmlPath)) {
+        return {};
+    }
+
+    try {
+        const xmlContent = fs.readFileSync(miscXmlPath, 'utf8');
+        const parser = new xml2js.Parser({
+            explicitArray: false,
+            mergeAttrs: true,
+            ignoreAttrs: false
+        });
+
+        let result: any;
+        parser.parseString(xmlContent, (err: any, parsed: any) => {
+            if (err) {
+                throw err;
+            }
+            result = parsed;
+        });
+
+        return extractSDKFromParsedMiscXML(result);
+    } catch (error) {
+        console.error(`Error parsing misc.xml: ${error}`);
+        return {};
+    }
+}
+
+/**
+ * Extracts SDK information from parsed misc.xml object
+ * Priority: Black component sdkName > ProjectRootManager project-jdk-name
+ * @param parsedXML The parsed XML object from xml2js
+ * @returns SDKInfo containing SDK information
+ */
+function extractSDKFromParsedMiscXML(parsedXML: any): SDKInfo {
+    const sdkInfo: SDKInfo = {};
+
+    try {
+        const project = parsedXML?.project;
+        if (!project) {
+            return sdkInfo;
+        }
+
+        // Handle both single component and array of components
+        const components = Array.isArray(project.component) ? project.component : [project.component];
+        
+        // First priority: Look for Black component with sdkName
+        const blackComponent = components.find((comp: any) => comp?.name === 'Black');
+        if (blackComponent?.option) {
+            const options = Array.isArray(blackComponent.option) ? blackComponent.option : [blackComponent.option];
+            const sdkNameOption = options.find((opt: any) => opt?.name === 'sdkName');
+            if (sdkNameOption?.value) {
+                sdkInfo.sdkName = sdkNameOption.value;
+                return sdkInfo; // Return immediately if found in Black component
+            }
+        }
+
+        // Second priority: Look for ProjectRootManager with project-jdk-name
+        const projectRootManager = components.find((comp: any) => comp?.name === 'ProjectRootManager');
+        if (projectRootManager?.['project-jdk-name']) {
+            sdkInfo.sdkName = projectRootManager['project-jdk-name'];
+        }
+    } catch (error) {
+        console.error(`Error extracting SDK info from parsed misc.xml: ${error}`);
+    }
+
+    return sdkInfo;
+}
+
+/**
+ * Extracts SDK information from parsed workspace.xml object
  * @param parsedXML The parsed XML object from xml2js
  * @returns SDKInfo containing SDK information
  */

@@ -3,6 +3,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { parse } from 'jsonc-parser';
 import { generateIntelliJConfig, sanitizeFileName } from './xmlGenerator';
+import { extractSDKFromWorkspaceSync } from './workspaceParser';
+import { VSCodeLaunchConfig, LaunchConfig } from './types';
 
 export function activate(context: vscode.ExtensionContext) {
     let disposable = vscode.commands.registerCommand('pythonDebugSync.sync', async () => {
@@ -27,8 +29,11 @@ export function activate(context: vscode.ExtensionContext) {
                               pythonConfig.get<string>('pythonPath') ||
                               'python';
 
+            // Extract SDK information from workspace
+            const sdkInfo = extractSDKFromWorkspaceSync(workspaceFolder.uri.fsPath);
+
             const launchContent = fs.readFileSync(launchPath, 'utf8');
-            let launchConfig;
+            let launchConfig: LaunchConfig;
 
             try {
                 // Parse JSON with comments support
@@ -39,7 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             // Support both 'python' and 'debugpy' types
-            const pythonConfigs = launchConfig.configurations?.filter((c: any) => c.type === 'debugpy' || c.type === 'python');
+            const pythonConfigs = launchConfig.configurations?.filter((c: VSCodeLaunchConfig) => c.type === 'debugpy' || c.type === 'python');
 
             if (!pythonConfigs?.length) {
                 vscode.window.showWarningMessage('No Python debug configurations found');
@@ -53,7 +58,7 @@ export function activate(context: vscode.ExtensionContext) {
             let syncedCount = 0;
             for (const config of pythonConfigs) {
                 if (config.request === 'launch' && (config.program || config.module)) {
-                    const xml = generateIntelliJConfig(config, pythonPath);
+                    const xml = generateIntelliJConfig(config, pythonPath, sdkInfo.sdkName);
                     const fileName = `${sanitizeFileName(config.name)}.xml`;
                     fs.writeFileSync(path.join(ideaPath, fileName), xml);
                     syncedCount++;

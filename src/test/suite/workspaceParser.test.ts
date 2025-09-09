@@ -53,11 +53,12 @@ describe('Workspace Parser Test Suite', () => {
         // Clean up is optional since we're using the existing test-data structure
     });
 
-    it('should extract SDK_HOME and SDK_NAME from workspace.xml', () => {
+    it('should extract SDK_HOME from workspace.xml and SDK_NAME from misc.xml (Black component)', () => {
         const sdkInfo: SDKInfo = extractSDKFromWorkspaceSync(testDataPath);
         
         assert.strictEqual(sdkInfo.sdkHome, '/home/user/.pyenv/versions/3.11.0/bin/python');
-        assert.strictEqual(sdkInfo.sdkName, 'freqtrade');
+        // Should prioritize misc.xml Black component sdkName over workspace.xml SDK_NAME
+        assert.strictEqual(sdkInfo.sdkName, 'Python 3.13');
     });
 
     it('should return empty object when workspace.xml does not exist', () => {
@@ -111,5 +112,151 @@ describe('Workspace Parser Test Suite', () => {
         // Clean up
         fs.unlinkSync(noRunManagerXmlPath);
         fs.rmdirSync(noRunManagerPath);
+    });
+
+    it('should prioritize misc.xml Black component over ProjectRootManager', () => {
+        // Create a test workspace directory structure
+        const testWorkspacePath = path.join(testDataPath, 'priority-test');
+        const testIdeaPath = path.join(testWorkspacePath, '.idea');
+        const testMiscXmlPath = path.join(testIdeaPath, 'misc.xml');
+        const testWorkspaceXmlPath = path.join(testIdeaPath, 'workspace.xml');
+        
+        fs.mkdirSync(testIdeaPath, { recursive: true });
+        
+        // Create misc.xml with both Black and ProjectRootManager components
+        fs.writeFileSync(testMiscXmlPath, `<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Black">
+    <option name="sdkName" value="Black SDK" />
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="ProjectRoot SDK" project-jdk-type="Python SDK" />
+</project>`);
+        
+        // Create workspace.xml with SDK_NAME
+        fs.writeFileSync(testWorkspaceXmlPath, `<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RunManager">
+    <configuration name="test" type="PythonConfigurationType">
+      <option name="SDK_HOME" value="/test/python" />
+      <option name="SDK_NAME" value="Workspace SDK" />
+    </configuration>
+  </component>
+</project>`);
+        
+        const sdkInfo: SDKInfo = extractSDKFromWorkspaceSync(testWorkspacePath);
+        
+        // Should prioritize Black component over ProjectRootManager and workspace.xml
+        assert.strictEqual(sdkInfo.sdkName, 'Black SDK');
+        assert.strictEqual(sdkInfo.sdkHome, '/test/python');
+        
+        // Clean up
+        fs.unlinkSync(testMiscXmlPath);
+        fs.unlinkSync(testWorkspaceXmlPath);
+        fs.rmdirSync(testIdeaPath);
+        fs.rmdirSync(testWorkspacePath);
+    });
+
+    it('should fall back to ProjectRootManager when Black component is missing', () => {
+        // Create a test workspace directory structure
+        const testWorkspacePath = path.join(testDataPath, 'projectroot-test');
+        const testIdeaPath = path.join(testWorkspacePath, '.idea');
+        const testMiscXmlPath = path.join(testIdeaPath, 'misc.xml');
+        const testWorkspaceXmlPath = path.join(testIdeaPath, 'workspace.xml');
+        
+        fs.mkdirSync(testIdeaPath, { recursive: true });
+        
+        // Create misc.xml with only ProjectRootManager
+        fs.writeFileSync(testMiscXmlPath, `<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectRootManager" version="2" project-jdk-name="ProjectRoot SDK" project-jdk-type="Python SDK" />
+</project>`);
+        
+        // Create workspace.xml with SDK_NAME
+        fs.writeFileSync(testWorkspaceXmlPath, `<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RunManager">
+    <configuration name="test" type="PythonConfigurationType">
+      <option name="SDK_HOME" value="/test/python" />
+      <option name="SDK_NAME" value="Workspace SDK" />
+    </configuration>
+  </component>
+</project>`);
+        
+        const sdkInfo: SDKInfo = extractSDKFromWorkspaceSync(testWorkspacePath);
+        
+        // Should use ProjectRootManager over workspace.xml
+        assert.strictEqual(sdkInfo.sdkName, 'ProjectRoot SDK');
+        assert.strictEqual(sdkInfo.sdkHome, '/test/python');
+        
+        // Clean up
+        fs.unlinkSync(testMiscXmlPath);
+        fs.unlinkSync(testWorkspaceXmlPath);
+        fs.rmdirSync(testIdeaPath);
+        fs.rmdirSync(testWorkspacePath);
+    });
+
+    it('should fall back to workspace.xml when misc.xml is missing', () => {
+        // Create a test workspace directory structure with only workspace.xml
+        const testWorkspacePath = path.join(testDataPath, 'workspace-only-test');
+        const testIdeaPath = path.join(testWorkspacePath, '.idea');
+        const testWorkspaceXmlPath = path.join(testIdeaPath, 'workspace.xml');
+        
+        fs.mkdirSync(testIdeaPath, { recursive: true });
+        fs.writeFileSync(testWorkspaceXmlPath, `<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RunManager">
+    <configuration name="test" type="PythonConfigurationType">
+      <option name="SDK_HOME" value="/test/python" />
+      <option name="SDK_NAME" value="Workspace SDK" />
+    </configuration>
+  </component>
+</project>`);
+        
+        const sdkInfo: SDKInfo = extractSDKFromWorkspaceSync(testWorkspacePath);
+        
+        // Should use workspace.xml values
+        assert.strictEqual(sdkInfo.sdkName, 'Workspace SDK');
+        assert.strictEqual(sdkInfo.sdkHome, '/test/python');
+        
+        // Clean up
+        fs.unlinkSync(testWorkspaceXmlPath);
+        fs.rmdirSync(testIdeaPath);
+        fs.rmdirSync(testWorkspacePath);
+    });
+
+    it('should handle malformed misc.xml gracefully', () => {
+        // Create a test workspace directory structure
+        const testWorkspacePath = path.join(testDataPath, 'malformed-misc-test');
+        const testIdeaPath = path.join(testWorkspacePath, '.idea');
+        const testMiscXmlPath = path.join(testIdeaPath, 'misc.xml');
+        const testWorkspaceXmlPath = path.join(testIdeaPath, 'workspace.xml');
+        
+        fs.mkdirSync(testIdeaPath, { recursive: true });
+        
+        // Create malformed misc.xml
+        fs.writeFileSync(testMiscXmlPath, '<invalid><xml>malformed</invalid>');
+        
+        // Create valid workspace.xml
+        fs.writeFileSync(testWorkspaceXmlPath, `<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RunManager">
+    <configuration name="test" type="PythonConfigurationType">
+      <option name="SDK_HOME" value="/test/python" />
+      <option name="SDK_NAME" value="Workspace SDK" />
+    </configuration>
+  </component>
+</project>`);
+        
+        const sdkInfo: SDKInfo = extractSDKFromWorkspaceSync(testWorkspacePath);
+        
+        // Should fall back to workspace.xml when misc.xml is malformed
+        assert.strictEqual(sdkInfo.sdkName, 'Workspace SDK');
+        assert.strictEqual(sdkInfo.sdkHome, '/test/python');
+        
+        // Clean up
+        fs.unlinkSync(testMiscXmlPath);
+        fs.unlinkSync(testWorkspaceXmlPath);
+        fs.rmdirSync(testIdeaPath);
+        fs.rmdirSync(testWorkspacePath);
     });
 });
