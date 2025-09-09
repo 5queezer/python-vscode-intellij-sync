@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import JSONC from 'tiny-jsonc';
 
 // Import functions to test
 function sanitizeFileName(name: string): string {
@@ -124,5 +125,36 @@ describe('Python Debug Config Sync', () => {
         assert.ok(xml.includes('PARAMETERS" value=""'));
         assert.ok(xml.includes('WORKING_DIRECTORY" value=""'));
         assert.ok(!xml.includes('<env name='));
+    });
+
+    it('should load and parse JSON with comments from test-data/launch.json', () => {
+        // Use absolute path from workspace root
+        const testDataPath = path.join(process.cwd(), 'test-data', 'launch.json');
+        
+        // Verify the test data file exists
+        assert.ok(fs.existsSync(testDataPath), `Test data file should exist at ${testDataPath}`);
+        
+        // Read the file content
+        const fileContent = fs.readFileSync(testDataPath, 'utf8');
+        
+        // Verify it contains a comment
+        assert.ok(fileContent.includes('//'), 'File should contain comments');
+        
+        // Parse the JSON with comments using tiny-jsonc
+        const config = JSONC.parse(fileContent);
+        
+        // Verify the parsed structure
+        assert.ok(config.configurations, 'Should have configurations array');
+        assert.ok(Array.isArray(config.configurations), 'configurations should be an array');
+        assert.ok(config.configurations.length > 0, 'Should have at least one configuration');
+        
+        // Test specific configuration
+        const backtestingConfig = config.configurations.find((c: any) =>
+            c.name === 'backtesting SimpleHFTStrategy'
+        );
+        assert.ok(backtestingConfig, 'Should find SimpleHFTStrategy configuration');
+        assert.strictEqual(backtestingConfig.type, 'debugpy');
+        assert.strictEqual(backtestingConfig.module, 'freqtrade.main');
+        assert.ok(Array.isArray(backtestingConfig.args), 'Should have args array');
     });
 });
