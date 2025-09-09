@@ -1,0 +1,49 @@
+{
+    "version": "0.2.0",
+    // Python debug configurations
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "debugpy", // Modern VS Code uses debugpy
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--debug",
+                "--verbose"
+            ],
+            "env": {
+                "DEBUG": "true",
+                "API_KEY": "test123"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Python: Module",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "myapp.cli",
+            "args": [
+                "start",
+                "--port",
+                "8080"
+            ],
+            "env": {
+                "ENV": "development"
+            }
+        },
+        // Legacy python type still supported
+        {
+            "name": "Python: Legacy",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/legacy.py"
+        },
+        {
+            "name": "Node.js: Current File",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/app.js"
+        }
+    ]
+}
