@@ -53,12 +53,12 @@ describe('Workspace Parser Test Suite', () => {
         // Clean up is optional since we're using the existing test-data structure
     });
 
-    it('should extract SDK_HOME from workspace.xml and SDK_NAME from misc.xml (Black component)', () => {
+    it('should extract SDK_HOME from workspace.xml and SDK_NAME from misc.xml (ProjectRootManager)', () => {
         const sdkInfo: SDKInfo = extractSDKFromWorkspaceSync(testDataPath);
         
         assert.strictEqual(sdkInfo.sdkHome, '/home/user/.pyenv/versions/3.11.0/bin/python');
-        // Should prioritize misc.xml Black component sdkName over workspace.xml SDK_NAME
-        assert.strictEqual(sdkInfo.sdkName, 'Python 3.13');
+        // Should prioritize misc.xml ProjectRootManager over workspace.xml SDK_NAME (Black component is disabled)
+        assert.strictEqual(sdkInfo.sdkName, 'unique123');
     });
 
     it('should return empty object when workspace.xml does not exist', () => {
@@ -114,7 +114,7 @@ describe('Workspace Parser Test Suite', () => {
         fs.rmdirSync(noRunManagerPath);
     });
 
-    it('should prioritize misc.xml Black component over ProjectRootManager', () => {
+    it('should prioritize misc.xml ProjectRootManager over workspace.xml (Black component disabled)', () => {
         // Create a test workspace directory structure
         const testWorkspacePath = path.join(testDataPath, 'priority-test');
         const testIdeaPath = path.join(testWorkspacePath, '.idea');
@@ -145,8 +145,8 @@ describe('Workspace Parser Test Suite', () => {
         
         const sdkInfo: SDKInfo = extractSDKFromWorkspaceSync(testWorkspacePath);
         
-        // Should prioritize Black component over ProjectRootManager and workspace.xml
-        assert.strictEqual(sdkInfo.sdkName, 'Black SDK');
+        // Should prioritize ProjectRootManager over workspace.xml (Black component is disabled)
+        assert.strictEqual(sdkInfo.sdkName, 'ProjectRoot SDK');
         assert.strictEqual(sdkInfo.sdkHome, '/test/python');
         
         // Clean up
@@ -156,7 +156,7 @@ describe('Workspace Parser Test Suite', () => {
         fs.rmdirSync(testWorkspacePath);
     });
 
-    it('should fall back to ProjectRootManager when Black component is missing', () => {
+    it('should use ProjectRootManager when available (Black component disabled)', () => {
         // Create a test workspace directory structure
         const testWorkspacePath = path.join(testDataPath, 'projectroot-test');
         const testIdeaPath = path.join(testWorkspacePath, '.idea');

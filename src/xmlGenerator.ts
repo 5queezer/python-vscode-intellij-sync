@@ -22,15 +22,14 @@ ${envXml}    </envs>
     <option name="SDK_HOME" value="${pythonPath}" />
     <option name="SDK_NAME" value="${sdkName || ''}" />
     <option name="WORKING_DIRECTORY" value="${cwd}" />
-    <option name="IS_MODULE_SDK" value="true" />
+    <option name="IS_MODULE_SDK" value="false" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     ${isModule
             ? `<EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-    <option name="SCRIPT_NAME" value="" />
+    <option name="SCRIPT_NAME" value="${config.module}" />
     <option name="CLASS_NAME" value="" />
     <option name="METHOD_NAME" value="" />
-    <option name="FOLDER_NAME" value="" />
     <option name="MODULE_NAME" value="${config.module}" />`
             : `<option name="SCRIPT_NAME" value="${scriptPath}" />`
         }

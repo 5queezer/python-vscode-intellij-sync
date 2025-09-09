@@ -151,15 +151,15 @@ function extractSDKFromParsedMiscXML(parsedXML: any): SDKInfo {
         const components = Array.isArray(project.component) ? project.component : [project.component];
         
         // First priority: Look for Black component with sdkName
-        const blackComponent = components.find((comp: any) => comp?.name === 'Black');
-        if (blackComponent?.option) {
-            const options = Array.isArray(blackComponent.option) ? blackComponent.option : [blackComponent.option];
-            const sdkNameOption = options.find((opt: any) => opt?.name === 'sdkName');
-            if (sdkNameOption?.value) {
-                sdkInfo.sdkName = sdkNameOption.value;
-                return sdkInfo; // Return immediately if found in Black component
-            }
-        }
+        // const blackComponent = components.find((comp: any) => comp?.name === 'Black');
+        // if (blackComponent?.option) {
+        //     const options = Array.isArray(blackComponent.option) ? blackComponent.option : [blackComponent.option];
+        //     const sdkNameOption = options.find((opt: any) => opt?.name === 'sdkName');
+        //     if (sdkNameOption?.value) {
+        //         sdkInfo.sdkName = sdkNameOption.value;
+        //         return sdkInfo; // Return immediately if found in Black component
+        //     }
+        // }
 
         // Second priority: Look for ProjectRootManager with project-jdk-name
         const projectRootManager = components.find((comp: any) => comp?.name === 'ProjectRootManager');

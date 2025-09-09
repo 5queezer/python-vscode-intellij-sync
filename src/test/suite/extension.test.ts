@@ -34,6 +34,7 @@ describe('Python Debug Config Sync', () => {
         assert.ok(xml.includes('SCRIPT_NAME" value="/path/to/main.py"'));
         assert.ok(xml.includes('PARAMETERS" value="--debug --verbose"'));
         assert.ok(xml.includes('MODULE_MODE" value="false"'));
+        assert.ok(xml.includes('IS_MODULE_SDK" value="false"'));
         assert.ok(xml.includes('env name="DEBUG" value="true"'));
         assert.ok(xml.includes('WORKING_DIRECTORY" value="/workspace"'));
     });
@@ -52,7 +53,9 @@ describe('Python Debug Config Sync', () => {
 
         assert.ok(xml.includes('name="Python: Module"'));
         assert.ok(xml.includes('MODULE_NAME" value="myapp.cli"'));
+        assert.ok(xml.includes('SCRIPT_NAME" value="myapp.cli"'));
         assert.ok(xml.includes('MODULE_MODE" value="true"'));
+        assert.ok(xml.includes('IS_MODULE_SDK" value="false"'));
         assert.ok(xml.includes('PARAMETERS" value="start"'));
         assert.ok(xml.includes('env name="ENV" value="dev"'));
     });
@@ -83,6 +86,7 @@ describe('Python Debug Config Sync', () => {
 
         assert.ok(xml.includes('PARAMETERS" value=""'));
         assert.ok(xml.includes('WORKING_DIRECTORY" value=""'));
+        assert.ok(xml.includes('IS_MODULE_SDK" value="false"'));
         assert.ok(!xml.includes('<env name='));
     });
 
@@ -163,6 +167,8 @@ describe('Python Debug Config Sync', () => {
                 if (config.module) {
                     assert.ok(xml.includes(`MODULE_NAME" value="${config.module}"`),
                         `XML should contain module name: ${config.module}`);
+                    assert.ok(xml.includes(`SCRIPT_NAME" value="${config.module}"`),
+                        `XML should contain script name with module value: ${config.module}`);
                     assert.ok(xml.includes('MODULE_MODE" value="true"'),
                         'XML should set MODULE_MODE to true for module configs');
                 } else if (config.program) {
@@ -171,6 +177,10 @@ describe('Python Debug Config Sync', () => {
                     assert.ok(xml.includes('MODULE_MODE" value="false"'),
                         'XML should set MODULE_MODE to false for program configs');
                 }
+                
+                // Verify IS_MODULE_SDK is always false
+                assert.ok(xml.includes('IS_MODULE_SDK" value="false"'),
+                    'XML should set IS_MODULE_SDK to false');
                 
                 // Test arguments conversion
                 if (config.args && Array.isArray(config.args)) {
@@ -210,7 +220,11 @@ describe('Python Debug Config Sync', () => {
             'XML should contain the correct configuration name');
         assert.ok(xml.includes('MODULE_NAME" value="main"'),
             'XML should contain the main module');
+        assert.ok(xml.includes('SCRIPT_NAME" value="main"'),
+            'XML should contain the script name with module value');
         assert.ok(xml.includes('MODULE_MODE" value="true"'),
             'XML should set MODULE_MODE to true for module configs');
+        assert.ok(xml.includes('IS_MODULE_SDK" value="false"'),
+            'XML should set IS_MODULE_SDK to false');
     });
 });
