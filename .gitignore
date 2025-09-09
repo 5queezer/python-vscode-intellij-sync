@@ -3,3 +3,5 @@
 out/*
 src/*.js
 src/*.js.map
+build/*.vsix
+

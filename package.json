@@ -23,10 +23,10 @@
         ]
     },
     "scripts": {
-        "compile": "tsc -p ./",
+        "compile": "tsc -p ./ --outDir out",
         "test": "npm run compile && npx mocha out/src/test/suite/*.test.js",
         "test:integration": "node ./src/test/runTest.js",
-        "package": "vsce package"
+        "package": "vsce package -o build/launch.json-vscode.vsix"
     },
     "devDependencies": {
         "@types/glob": "^8.1.0",
