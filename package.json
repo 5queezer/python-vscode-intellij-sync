@@ -2,7 +2,7 @@
     "name": "python-debug-sync",
     "displayName": "Python Debug Config Sync",
     "description": "Sync VS Code Python debug configs to IntelliJ",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "repository": {},
     "engines": {
         "vscode": "^1.60.0"
@@ -23,25 +23,34 @@
         ]
     },
     "scripts": {
+        "vscode:prepublish": "npm run bundle",
         "compile": "tsc -p ./ --outDir out",
+        "bundle": "webpack --mode production",
+        "bundle-dev": "webpack --mode development",
+        "watch": "webpack --mode development --watch",
         "test": "npm run compile && npx mocha out/src/test/suite/*.test.js",
         "test:integration": "node ./src/test/runTest.js",
-        "package": "vsce package -o build/launch.json-vscode.vsix"
+        "package": "npm run bundle && vsce package -o build/launch.json-vscode.vsix"
     },
     "devDependencies": {
         "@types/glob": "^8.1.0",
         "@types/mocha": "^9.0.0",
         "@types/node": "16.x",
         "@types/vscode": "^1.60.0",
+        "@types/xml2js": "^0.4.14",
+        "c8": "^10.1.3",
         "jsonc-parser": "^3.2.0",
         "mocha": "^9.0.0",
+        "ts-loader": "^9.5.4",
         "ts-node": "^10.0.0",
         "typescript": "^4.9.0",
         "vsce": "^2.0.0",
-        "vscode": "^1.1.37"
+        "webpack": "^5.101.3",
+        "webpack-cli": "^6.0.1"
     },
     "dependencies": {
         "@vscode/test-electron": "^2.5.2",
-        "tiny-jsonc": "^1.0.2"
+        "tiny-jsonc": "^1.0.2",
+        "xml2js": "^0.4.23"
     }
 }
