@@ -1,49 +1,34 @@
 {
+    // Test comment for launch configuration
     "version": "0.2.0",
-    // Python debug configurations
     "configurations": [
         {
             "name": "Python: Current File",
-            "type": "debugpy", // Modern VS Code uses debugpy
+            "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${file}",
             "console": "integratedTerminal",
-            "args": [
-                "--debug",
-                "--verbose"
-            ],
-            "env": {
-                "DEBUG": "true",
-                "API_KEY": "test123"
-            },
             "cwd": "${workspaceFolder}"
         },
         {
             "name": "Python: Module",
             "type": "debugpy",
             "request": "launch",
-            "module": "myapp.cli",
+            "module": "main",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Python: Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
             "args": [
-                "start",
-                "--port",
-                "8080"
+                "tests/",
+                "-v"
             ],
-            "env": {
-                "ENV": "development"
-            }
-        },
-        // Legacy python type still supported
-        {
-            "name": "Python: Legacy",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/legacy.py"
-        },
-        {
-            "name": "Node.js: Current File",
-            "type": "node",
-            "request": "launch",
-            "program": "${workspaceFolder}/app.js"
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

@@ -2,8 +2,13 @@
     "name": "python-debug-sync",
     "displayName": "Python Debug Config Sync",
     "description": "Sync VS Code Python debug configs to IntelliJ",
-    "version": "1.0.0",
+    "version": "0.0.3",
     "repository": {},
+    "publisher": "ChristianPojoni",
+    "author": {
+        "name": "Christian Pojoni",
+        "email": "christian.pojoni@gmail.com"
+    },
     "engines": {
         "vscode": "^1.60.0"
     },
@@ -19,27 +24,42 @@
             {
                 "command": "pythonDebugSync.sync",
                 "title": "Sync Python Debug Configs to IntelliJ"
+            },
+            {
+                "command": "pythonDebugSync.syncFromIntelliJ",
+                "title": "Sync Python Debug Configs from IntelliJ"
             }
         ]
     },
     "scripts": {
-        "compile": "tsc -p ./",
+        "vscode:prepublish": "npm run bundle",
+        "compile": "tsc -p ./ --outDir out",
+        "bundle": "webpack --mode production",
+        "bundle-dev": "webpack --mode development",
+        "watch": "webpack --mode development --watch",
         "test": "npm run compile && npx mocha out/src/test/suite/*.test.js",
         "test:integration": "node ./src/test/runTest.js",
-        "package": "vsce package"
+        "package": "npm run bundle && vsce package -o build/launch.json-vscode.vsix"
     },
     "devDependencies": {
         "@types/glob": "^8.1.0",
         "@types/mocha": "^9.0.0",
         "@types/node": "16.x",
         "@types/vscode": "^1.60.0",
+        "@types/xml2js": "^0.4.14",
+        "c8": "^10.1.3",
         "jsonc-parser": "^3.2.0",
         "mocha": "^9.0.0",
+        "ts-loader": "^9.5.4",
         "ts-node": "^10.0.0",
         "typescript": "^4.9.0",
-        "vsce": "^2.0.0"
+        "vsce": "^2.0.0",
+        "webpack": "^5.101.3",
+        "webpack-cli": "^6.0.1"
     },
     "dependencies": {
-        "@vscode/test-electron": "^2.5.2"
+        "@vscode/test-electron": "^2.5.2",
+        "tiny-jsonc": "^1.0.2",
+        "xml2js": "^0.4.23"
     }
 }

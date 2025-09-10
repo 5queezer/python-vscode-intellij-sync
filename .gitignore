@@ -1,3 +1,10 @@
 /.vscode-test/
 *.vsix
+out/*
+src/*.js
+src/*.js.map
+build/*.vsix
 
+coverage/*
+
+!test-data/.idea
