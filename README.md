@@ -1,98 +1,137 @@
 # Python Debug Config Sync
 
-A VS Code extension that syncs Python debug configurations bidirectionally between VS Code and IntelliJ IDEA/PyCharm.
+[![VS Code Extension](https://img.shields.io/badge/VS%20Code-Extension-blue.svg)](https://marketplace.visualstudio.com/items?itemName=ChristianPojoni.python-debug-sync)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A VS Code extension that enables bidirectional synchronization of Python debug configurations between VS Code and IntelliJ IDEA/PyCharm.
 
 ## Features
 
-- **VS Code → IntelliJ**: Sync Python debug configurations from VS Code to IntelliJ IDEA/PyCharm
-- **IntelliJ → VS Code**: Sync Python debug configurations from IntelliJ IDEA/PyCharm to VS Code
-- **Smart Merging**: Preserves existing configurations while adding new ones
-- **Multiple Sources**: Supports both individual run configuration files and workspace.xml configurations
+- **Bidirectional Sync**: Transfer configurations in both directions
+- **Smart Merging**: Preserves existing configurations while intelligently adding new ones
+- **Multiple Sources**: Supports both persistent run configurations and workspace-specific settings
+- **Safe Operations**: Never overwrites existing configurations without explicit merging logic
+
+## Installation
+
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ChristianPojoni.python-debug-sync) or via command line:
+
+```bash
+code --install-extension ChristianPojoni.python-debug-sync
+```
 
 ## Usage
 
-### Sync from VS Code to IntelliJ
+Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and choose:
 
-Use the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run:
+- **Sync Python Debug Configs to IntelliJ** - Export VS Code configurations to IntelliJ
+- **Sync Python Debug Configs from IntelliJ** - Import IntelliJ configurations to VS Code
 
+### VS Code to IntelliJ Sync
+
+Converts your VS Code `launch.json` configurations into IntelliJ run configurations.
+
+- Reads `.vscode/launch.json` file
+- Converts Python debug configurations (`debugpy` and `python` types)
+- Generates XML files in `.idea/runConfigurations/`
+- Preserves script paths, module names, arguments, and environment variables
+
+Example configuration:
+
+```json
+{
+    "configurations": [
+        {
+            "name": "Run Main Script",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "args": ["--verbose", "--config=dev"],
+            "env": {"DEBUG": "1"}
+        }
+    ]
+}
 ```
-Sync Python Debug Configs to IntelliJ
-```
 
-This command reads your `.vscode/launch.json` file and generates corresponding IntelliJ run configurations in `.idea/runConfigurations/`.
+### IntelliJ to VS Code Sync
 
-### Sync from IntelliJ to VS Code
+Imports IntelliJ run configurations into your VS Code setup with intelligent merging.
 
-Use the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run:
+**Sources supported:**
+- **Persistent configurations**: `.idea/runConfigurations/*.xml` (shared with team)
+- **Workspace configurations**: `.idea/workspace.xml` (local to developer)
 
-```
-Sync Python Debug Configs from IntelliJ
-```
+**Smart merging behavior:**
+- Preserves existing VS Code configurations that don't conflict
+- Updates configurations with matching names while keeping VS Code-specific properties
+- Adds new configurations from IntelliJ
+- Maintains proper JSON formatting
 
-This command reads IntelliJ run configurations from:
-- `.idea/runConfigurations/*.xml` files (persistent configurations)
-- `.idea/workspace.xml` (temporary configurations)
+## Configuration Types Supported
 
-And creates or updates corresponding configurations in your `.vscode/launch.json` file.
+| Feature | VS Code | IntelliJ | Notes |
+|---------|---------|----------|-------|
+| Script execution | `program` | `SCRIPT_NAME` | Full file paths |
+| Module execution | `module` | `MODULE_NAME` | Python module names |
+| Command arguments | `args[]` | `PARAMETERS` | Parsed from command line |
+| Environment variables | `env{}` | `<envs>` | Key-value pairs |
+| Working directory | `cwd` | `WORKING_DIRECTORY` | Relative to workspace |
+| Pre-launch tasks | `preLaunchTask` | - | VS Code only (preserved) |
+
+## Requirements
+
+- VS Code 1.60.0 or higher
+- For VS Code to IntelliJ: Existing `.vscode/launch.json` with Python configurations
+- For IntelliJ to VS Code: IntelliJ project with `.idea/` folder
 
 ## Development
 
-### Prerequisites
+### Setup
 
 ```bash
-# Install dependencies
+git clone <repository-url>
+cd python-vscode-intellij-sync
 npm install
-
-# Ensure TypeScript is available (if needed)
-npx tsc --version
 ```
 
 ### Building
 
 ```bash
+# Development build with watch mode
+npm run watch
+
+# Production build
 npm run bundle
-```
 
-### Testing
-
-```bash
+# Run tests
 npm test
 ```
 
-### Packaging to VSX
+### Packaging
 
 ```bash
-# Generate .vsix package using @vscode/vsce
 npm run package
 ```
 
-This uses [`@vscode/vsce`](https://github.com/microsoft/vscode-vsce) to generate a `.vsix` file in the `build/` directory that can be:
+This generates `build/launch.json-vscode.vsix` which can be installed locally or published to the marketplace.
 
-- Installed locally: `code --install-extension build/launch.json-vscode.vsix`
-- Published to VS Code Marketplace
-- Shared with team members
+## Architecture
 
-## Requirements
+```
+src/
+├── extension.ts          # Main extension entry point
+├── types.ts             # TypeScript interfaces
+├── intellijParser.ts    # IntelliJ XML configuration parser
+├── launchJsonGenerator.ts # VS Code launch.json generator
+├── xmlGenerator.ts      # IntelliJ XML configuration generator
+├── workspaceParser.ts   # IntelliJ workspace.xml parser
+└── test/               # Test suites
+```
 
-- VS Code 1.60.0 or higher
-- For VS Code → IntelliJ: Python workspace with `.vscode/launch.json` configurations
-- For IntelliJ → VS Code: IntelliJ IDEA/PyCharm project with `.idea` folder
+## Contributing
 
-## Smart Merging
+Contributions are welcome! Please submit a Pull Request or open an issue for major changes.
 
-When syncing from IntelliJ to VS Code, the extension:
+## License
 
-- **Preserves existing VS Code configurations** that don't conflict
-- **Updates configurations with the same name** while preserving VS Code-specific properties (like `preLaunchTask`)
-- **Adds new configurations** from IntelliJ that don't exist in VS Code
-- **Maintains proper formatting** of the launch.json file
-
-## Supported IntelliJ Configuration Sources
-
-1. **Individual Run Configuration Files**: `.idea/runConfigurations/*.xml`
-   - These are persistent configurations saved by IntelliJ
-   - Typically shared across team members
-
-2. **Workspace Configurations**: `.idea/workspace.xml`
-   - These are temporary configurations stored in workspace
-   - Usually local to individual developers
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
