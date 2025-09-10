@@ -33,10 +33,12 @@ Converts your VS Code `launch.json` configurations into IntelliJ run configurati
 
 - Reads `.vscode/launch.json` file
 - Converts Python debug configurations (`debugpy` and `python` types)
+- Supports both **launch** and **attach** modes
 - Generates XML files in `.idea/runConfigurations/`
 - Preserves script paths, module names, arguments, and environment variables
+- Handles remote debugging configurations with path mappings
 
-Example configuration:
+Example launch configuration:
 
 ```json
 {
@@ -48,6 +50,31 @@ Example configuration:
             "program": "${workspaceFolder}/main.py",
             "args": ["--verbose", "--config=dev"],
             "env": {"DEBUG": "1"}
+        }
+    ]
+}
+```
+
+Example attach configuration:
+
+```json
+{
+    "configurations": [
+        {
+            "name": "Attach to Remote Python",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/app"
+                }
+            ],
+            "justMyCode": false
         }
     ]
 }
@@ -71,12 +98,23 @@ Imports IntelliJ run configurations into your VS Code setup with intelligent mer
 
 | Feature | VS Code | IntelliJ | Notes |
 |---------|---------|----------|-------|
+| **Launch Mode** | | | |
 | Script execution | `program` | `SCRIPT_NAME` | Full file paths |
 | Module execution | `module` | `MODULE_NAME` | Python module names |
 | Command arguments | `args[]` | `PARAMETERS` | Parsed from command line |
 | Environment variables | `env{}` | `<envs>` | Key-value pairs |
 | Working directory | `cwd` | `WORKING_DIRECTORY` | Relative to workspace |
 | Pre-launch tasks | `preLaunchTask` | - | VS Code only (preserved) |
+| **Attach Mode** | | | |
+| Remote debugging | `request: "attach"` | `ATTACH_MODE: true` | Connect to running process |
+| Connection host | `host` / `connect.host` | `HOST` / `ATTACH_HOST` | Target machine address |
+| Connection port | `port` / `connect.port` | `PORT` / `ATTACH_PORT` | Debugger port |
+| Path mappings | `pathMappings[]` | `<pathMappings>` | Local to remote path mapping |
+| Redirect output | `redirectOutput` | `REDIRECT_OUTPUT` | Capture remote output |
+| Just my code | `justMyCode` | `JUST_MY_CODE` | Skip library code |
+| Stop on entry | `stopOnEntry` | `STOP_ON_ENTRY` | Pause at first line |
+| Show return values | `showReturnValue` | `SHOW_RETURN_VALUE` | Display function returns |
+| Subprocess debugging | `subProcess` | `SUBPROCESS` | Debug child processes |
 
 ## Requirements
 

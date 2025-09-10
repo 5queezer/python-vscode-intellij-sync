@@ -59,7 +59,7 @@ describe('IntelliJConfigParser Test Suite', () => {
         
         // All returned configs should be Python-related
         for (const config of configs) {
-            const isPython = !!(config.scriptName || config.moduleName || config.sdkHome || config.sdkName);
+            const isPython = !!(config.scriptName || config.moduleName || config.sdkHome || config.sdkName || config.attachMode);
             assert.ok(isPython, `Configuration ${config.name} should be Python-related`);
         }
     });
@@ -72,5 +72,112 @@ describe('IntelliJConfigParser Test Suite', () => {
         
         const scriptConfig = configs.find(c => c.name === 'Python Script Test');
         assert.ok(scriptConfig, 'Sync version should find Python Script Test configuration');
+    });
+
+    it('Should parse attach mode configuration from test data', async () => {
+        // First, let's create a test attach configuration file
+        const fs = require('fs');
+        const ideaDir = path.join(testDataPath, '.idea', 'runConfigurations');
+        
+        // Ensure directory exists
+        if (!fs.existsSync(ideaDir)) {
+            fs.mkdirSync(ideaDir, { recursive: true });
+        }
+
+        const attachConfigXml = `<?xml version="1.0" encoding="UTF-8"?>
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Python Attach Test" type="PythonConfigurationType" factoryName="Python">
+    <option name="ATTACH_MODE" value="true" />
+    <option name="HOST" value="localhost" />
+    <option name="PORT" value="5678" />
+    <option name="REDIRECT_OUTPUT" value="true" />
+    <option name="JUST_MY_CODE" value="false" />
+    <option name="STOP_ON_ENTRY" value="true" />
+    <option name="SHOW_RETURN_VALUE" value="true" />
+    <option name="SUBPROCESS" value="false" />
+    <pathMappings>
+      <mapping localRoot="$PROJECT_DIR$/src" remoteRoot="/app/src" />
+      <mapping localRoot="$PROJECT_DIR$/tests" remoteRoot="/app/tests" />
+    </pathMappings>
+    <method v="2" />
+  </configuration>
+</component>`;
+
+        const configPath = path.join(ideaDir, 'Python_Attach_Test.xml');
+        fs.writeFileSync(configPath, attachConfigXml);
+
+        try {
+            const parser = new IntelliJConfigParser(testDataPath);
+            const configs = await parser.extractAllPythonConfigs();
+            
+            const attachConfig = configs.find(c => c.name === 'Python Attach Test');
+            assert.ok(attachConfig, 'Should find Python Attach Test configuration');
+            assert.strictEqual(attachConfig?.attachMode, true);
+            assert.strictEqual(attachConfig?.attachHost, 'localhost');
+            assert.strictEqual(attachConfig?.attachPort, 5678);
+            assert.strictEqual(attachConfig?.redirectOutput, true);
+            assert.strictEqual(attachConfig?.justMyCode, false);
+            assert.strictEqual(attachConfig?.stopOnEntry, true);
+            assert.strictEqual(attachConfig?.showReturnValue, true);
+            assert.strictEqual(attachConfig?.subProcess, false);
+            
+            // Check path mappings
+            assert.ok(attachConfig?.pathMappings);
+            assert.strictEqual(attachConfig.pathMappings.length, 2);
+            assert.strictEqual(attachConfig.pathMappings[0].localRoot, path.join(testDataPath, 'src'));
+            assert.strictEqual(attachConfig.pathMappings[0].remoteRoot, '/app/src');
+            assert.strictEqual(attachConfig.pathMappings[1].localRoot, path.join(testDataPath, 'tests'));
+            assert.strictEqual(attachConfig.pathMappings[1].remoteRoot, '/app/tests');
+            
+            // Should not have launch-specific properties
+            assert.strictEqual(attachConfig?.scriptName, undefined);
+            assert.strictEqual(attachConfig?.moduleName, undefined);
+            assert.strictEqual(attachConfig?.parameters, undefined);
+            assert.strictEqual(attachConfig?.workingDirectory, undefined);
+        } finally {
+            // Clean up test file
+            if (fs.existsSync(configPath)) {
+                fs.unlinkSync(configPath);
+            }
+        }
+    });
+
+    it('Should parse remote attach configuration with alternative option names', async () => {
+        const fs = require('fs');
+        const ideaDir = path.join(testDataPath, '.idea', 'runConfigurations');
+        
+        if (!fs.existsSync(ideaDir)) {
+            fs.mkdirSync(ideaDir, { recursive: true });
+        }
+
+        const remoteAttachXml = `<?xml version="1.0" encoding="UTF-8"?>
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Remote Attach" type="PythonConfigurationType" factoryName="Python">
+    <option name="IS_ATTACH" value="true" />
+    <option name="ATTACH_HOST" value="192.168.1.100" />
+    <option name="ATTACH_PORT" value="3000" />
+    <option name="SUB_PROCESS" value="true" />
+    <method v="2" />
+  </configuration>
+</component>`;
+
+        const configPath = path.join(ideaDir, 'Remote_Attach.xml');
+        fs.writeFileSync(configPath, remoteAttachXml);
+
+        try {
+            const parser = new IntelliJConfigParser(testDataPath);
+            const configs = await parser.extractAllPythonConfigs();
+            
+            const attachConfig = configs.find(c => c.name === 'Remote Attach');
+            assert.ok(attachConfig, 'Should find Remote Attach configuration');
+            assert.strictEqual(attachConfig?.attachMode, true);
+            assert.strictEqual(attachConfig?.attachHost, '192.168.1.100');
+            assert.strictEqual(attachConfig?.attachPort, 3000);
+            assert.strictEqual(attachConfig?.subProcess, true);
+        } finally {
+            if (fs.existsSync(configPath)) {
+                fs.unlinkSync(configPath);
+            }
+        }
     });
 });

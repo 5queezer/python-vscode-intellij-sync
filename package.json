@@ -2,7 +2,7 @@
     "name": "python-debug-sync",
     "displayName": "Python Debug Config Sync",
     "description": "Sync VS Code Python debug configs to IntelliJ",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "publisher": "ChristianPojoni",
     "license": "MIT",
     "repository": {

@@ -61,9 +61,70 @@ export class LaunchJsonGenerator {
         const vsCodeConfig: VSCodeLaunchConfig = {
             name: intellijConfig.name,
             type: 'debugpy',
-            request: 'launch'
+            request: intellijConfig.attachMode ? 'attach' : 'launch'
         };
 
+        if (intellijConfig.attachMode) {
+            // Handle attach mode configuration
+            this.configureAttachMode(vsCodeConfig, intellijConfig);
+        } else {
+            // Handle launch mode configuration
+            this.configureLaunchMode(vsCodeConfig, intellijConfig);
+        }
+
+        // Add common debugging properties
+        this.addCommonDebugProperties(vsCodeConfig, intellijConfig);
+
+        return vsCodeConfig;
+    }
+
+    /**
+     * Configures attach mode specific properties
+     */
+    private configureAttachMode(vsCodeConfig: VSCodeLaunchConfig, intellijConfig: ParsedIntelliJConfig): void {
+        // Set connection details
+        if (intellijConfig.attachHost && intellijConfig.attachPort) {
+            vsCodeConfig.connect = {
+                host: intellijConfig.attachHost,
+                port: intellijConfig.attachPort
+            };
+            // Also set individual properties for compatibility
+            vsCodeConfig.host = intellijConfig.attachHost;
+            vsCodeConfig.port = intellijConfig.attachPort;
+        } else {
+            // Default attach configuration
+            vsCodeConfig.host = intellijConfig.attachHost || 'localhost';
+            vsCodeConfig.port = intellijConfig.attachPort || 5678;
+            vsCodeConfig.connect = {
+                host: vsCodeConfig.host,
+                port: vsCodeConfig.port
+            };
+        }
+
+        // Handle path mappings for remote debugging
+        if (intellijConfig.pathMappings && intellijConfig.pathMappings.length > 0) {
+            vsCodeConfig.pathMappings = intellijConfig.pathMappings.map(mapping => ({
+                localRoot: this.resolveIntelliJPath(mapping.localRoot),
+                remoteRoot: mapping.remoteRoot
+            }));
+        } else {
+            // Default path mapping for local attach
+            vsCodeConfig.pathMappings = [{
+                localRoot: '${workspaceFolder}',
+                remoteRoot: '.'
+            }];
+        }
+
+        // Set attach-specific debugging options
+        if (intellijConfig.redirectOutput !== undefined) {
+            vsCodeConfig.redirectOutput = intellijConfig.redirectOutput;
+        }
+    }
+
+    /**
+     * Configures launch mode specific properties
+     */
+    private configureLaunchMode(vsCodeConfig: VSCodeLaunchConfig, intellijConfig: ParsedIntelliJConfig): void {
         // Handle module vs script execution
         if (intellijConfig.moduleMode && intellijConfig.moduleName) {
             vsCodeConfig.module = intellijConfig.moduleName;
@@ -99,8 +160,28 @@ export class LaunchJsonGenerator {
 
         // Add console setting for better debugging experience
         (vsCodeConfig as any).console = 'integratedTerminal';
+    }
 
-        return vsCodeConfig;
+    /**
+     * Adds common debugging properties that apply to both launch and attach modes
+     */
+    private addCommonDebugProperties(vsCodeConfig: VSCodeLaunchConfig, intellijConfig: ParsedIntelliJConfig): void {
+        // Set debugging behavior options
+        if (intellijConfig.justMyCode !== undefined) {
+            vsCodeConfig.justMyCode = intellijConfig.justMyCode;
+        }
+
+        if (intellijConfig.stopOnEntry !== undefined) {
+            vsCodeConfig.stopOnEntry = intellijConfig.stopOnEntry;
+        }
+
+        if (intellijConfig.showReturnValue !== undefined) {
+            vsCodeConfig.showReturnValue = intellijConfig.showReturnValue;
+        }
+
+        if (intellijConfig.subProcess !== undefined) {
+            vsCodeConfig.subProcess = intellijConfig.subProcess;
+        }
     }
 
     /**
@@ -221,13 +302,28 @@ export class LaunchJsonGenerator {
      * Validates that a VS Code configuration is complete and valid
      */
     private validateVSCodeConfig(config: VSCodeLaunchConfig): boolean {
-        // Must have name and either program or module
+        // Must have name
         if (!config.name) {
             return false;
         }
 
-        if (!config.program && !config.module) {
-            return false;
+        if (config.request === 'attach') {
+            // For attach mode, must have connection details
+            if (!config.host && !config.connect) {
+                return false;
+            }
+            if (!config.port && !config.connect) {
+                return false;
+            }
+            // If using connect object, it must have both host and port
+            if (config.connect && (!config.connect.host || !config.connect.port)) {
+                return false;
+            }
+        } else {
+            // For launch mode, must have either program or module
+            if (!config.program && !config.module) {
+                return false;
+            }
         }
 
         return true;

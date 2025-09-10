@@ -10,20 +10,46 @@ export interface VSCodeLaunchConfig {
     name: string;
     /** Configuration type - supports both debugpy and python */
     type: 'debugpy' | 'python';
-    /** Request type - typically 'launch' for our use case */
-    request: 'launch';
-    /** Python module to run (alternative to program) */
+    /** Request type - 'launch' to start a new process, 'attach' to connect to existing process */
+    request: 'launch' | 'attach';
+    /** Python module to run (alternative to program) - launch mode only */
     module?: string;
-    /** Python program/script path to run (alternative to module) */
+    /** Python program/script path to run (alternative to module) - launch mode only */
     program?: string;
-    /** Command line arguments */
+    /** Command line arguments - launch mode only */
     args?: string[];
-    /** Environment variables */
+    /** Environment variables - launch mode only */
     env?: Record<string, string>;
-    /** Working directory */
+    /** Working directory - launch mode only */
     cwd?: string;
     /** Pre-launch task to run */
     preLaunchTask?: string;
+    
+    // Attach mode specific properties
+    /** Host to connect to for attach mode (default: localhost) */
+    host?: string;
+    /** Port to connect to for attach mode */
+    port?: number;
+    /** Connection configuration for attach mode */
+    connect?: {
+        host: string;
+        port: number;
+    };
+    /** Path mappings for remote debugging */
+    pathMappings?: Array<{
+        localRoot: string;
+        remoteRoot: string;
+    }>;
+    /** Whether to redirect output in attach mode */
+    redirectOutput?: boolean;
+    /** Whether to show return values in debugger */
+    showReturnValue?: boolean;
+    /** Whether to debug only user code (skip library code) */
+    justMyCode?: boolean;
+    /** Whether to stop on entry */
+    stopOnEntry?: boolean;
+    /** Whether to enable subprocess debugging */
+    subProcess?: boolean;
 }
 
 /**
@@ -86,18 +112,41 @@ export interface ParsedIntelliJConfig {
     sdkHome?: string;
     /** SDK name */
     sdkName?: string;
-    /** Script path to run */
+    /** Script path to run - launch mode */
     scriptName?: string;
-    /** Module name to run */
+    /** Module name to run - launch mode */
     moduleName?: string;
-    /** Command line parameters */
+    /** Command line parameters - launch mode */
     parameters?: string;
-    /** Working directory */
+    /** Working directory - launch mode */
     workingDirectory?: string;
-    /** Environment variables */
+    /** Environment variables - launch mode */
     env?: Record<string, string>;
-    /** Whether this is module mode */
+    /** Whether this is module mode - launch mode */
     moduleMode?: boolean;
     /** Whether this is temporary */
     temporary?: boolean;
+    
+    // Attach mode specific properties
+    /** Whether this is an attach configuration */
+    attachMode?: boolean;
+    /** Host to attach to */
+    attachHost?: string;
+    /** Port to attach to */
+    attachPort?: number;
+    /** Path mappings for remote debugging */
+    pathMappings?: Array<{
+        localRoot: string;
+        remoteRoot: string;
+    }>;
+    /** Whether to redirect output */
+    redirectOutput?: boolean;
+    /** Whether to show return values */
+    showReturnValue?: boolean;
+    /** Whether to debug only user code */
+    justMyCode?: boolean;
+    /** Whether to stop on entry */
+    stopOnEntry?: boolean;
+    /** Whether to enable subprocess debugging */
+    subProcess?: boolean;
 }

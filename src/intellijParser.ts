@@ -303,6 +303,35 @@ export class IntelliJConfigParser {
                     case 'MODULE_MODE':
                         parsedConfig.moduleMode = option.value === 'true';
                         break;
+                    // Attach mode specific options
+                    case 'ATTACH_MODE':
+                    case 'IS_ATTACH':
+                        parsedConfig.attachMode = option.value === 'true';
+                        break;
+                    case 'HOST':
+                    case 'ATTACH_HOST':
+                        parsedConfig.attachHost = option.value;
+                        break;
+                    case 'PORT':
+                    case 'ATTACH_PORT':
+                        parsedConfig.attachPort = parseInt(option.value, 10);
+                        break;
+                    case 'REDIRECT_OUTPUT':
+                        parsedConfig.redirectOutput = option.value === 'true';
+                        break;
+                    case 'JUST_MY_CODE':
+                        parsedConfig.justMyCode = option.value === 'true';
+                        break;
+                    case 'STOP_ON_ENTRY':
+                        parsedConfig.stopOnEntry = option.value === 'true';
+                        break;
+                    case 'SHOW_RETURN_VALUE':
+                        parsedConfig.showReturnValue = option.value === 'true';
+                        break;
+                    case 'SUBPROCESS':
+                    case 'SUB_PROCESS':
+                        parsedConfig.subProcess = option.value === 'true';
+                        break;
                 }
             }
         }
@@ -320,6 +349,23 @@ export class IntelliJConfigParser {
             }
         }
 
+        // Parse path mappings for remote debugging
+        if (config.pathMappings && config.pathMappings.mapping) {
+            const mappings = Array.isArray(config.pathMappings.mapping)
+                ? config.pathMappings.mapping
+                : [config.pathMappings.mapping];
+            
+            parsedConfig.pathMappings = [];
+            for (const mapping of mappings) {
+                if (mapping.localRoot && mapping.remoteRoot) {
+                    parsedConfig.pathMappings.push({
+                        localRoot: this.resolveIntelliJPath(mapping.localRoot),
+                        remoteRoot: mapping.remoteRoot
+                    });
+                }
+            }
+        }
+
         return parsedConfig;
     }
 
@@ -327,8 +373,8 @@ export class IntelliJConfigParser {
      * Checks if a configuration is a Python configuration
      */
     private isPythonConfiguration(config: ParsedIntelliJConfig): boolean {
-        // Check if it has Python-specific properties
-        return !!(config.scriptName || config.moduleName || config.sdkHome || config.sdkName);
+        // Check if it has Python-specific properties or is an attach mode configuration
+        return !!(config.scriptName || config.moduleName || config.sdkHome || config.sdkName || config.attachMode);
     }
 
     /**

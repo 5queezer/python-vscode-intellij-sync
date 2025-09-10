@@ -262,4 +262,195 @@ describe('LaunchJsonGenerator Test Suite', () => {
         assert.strictEqual(config.env['PATH_VAR'], '${workspaceFolder}/../swisseph/ephe');
         assert.strictEqual(config.env['WORKSPACE_PATH'], '${workspaceFolder}/data');
     });
+
+    it('Should create attach mode configuration with default settings', async () => {
+        const intellijConfig: ParsedIntelliJConfig = {
+            name: 'Python Attach',
+            attachMode: true,
+            attachHost: 'localhost',
+            attachPort: 5678
+        };
+
+        await generator.syncToLaunchJson([intellijConfig]);
+
+        const launchPath = path.join(tempDir, '.vscode', 'launch.json');
+        const launchContent = JSON.parse(fs.readFileSync(launchPath, 'utf8'));
+        
+        const config = launchContent.configurations[0];
+        assert.strictEqual(config.name, 'Python Attach');
+        assert.strictEqual(config.type, 'debugpy');
+        assert.strictEqual(config.request, 'attach');
+        assert.strictEqual(config.host, 'localhost');
+        assert.strictEqual(config.port, 5678);
+        assert.deepStrictEqual(config.connect, {
+            host: 'localhost',
+            port: 5678
+        });
+        assert.deepStrictEqual(config.pathMappings, [{
+            localRoot: '${workspaceFolder}',
+            remoteRoot: '.'
+        }]);
+        // Should not have launch-specific properties
+        assert.strictEqual(config.program, undefined);
+        assert.strictEqual(config.module, undefined);
+        assert.strictEqual(config.args, undefined);
+    });
+
+    it('Should create attach mode configuration with custom path mappings', async () => {
+        const intellijConfig: ParsedIntelliJConfig = {
+            name: 'Remote Python Attach',
+            attachMode: true,
+            attachHost: '192.168.1.100',
+            attachPort: 3000,
+            pathMappings: [
+                {
+                    localRoot: `${tempDir}/src`,
+                    remoteRoot: '/app/src'
+                },
+                {
+                    localRoot: `${tempDir}/tests`,
+                    remoteRoot: '/app/tests'
+                }
+            ],
+            redirectOutput: true,
+            justMyCode: false,
+            stopOnEntry: true
+        };
+
+        await generator.syncToLaunchJson([intellijConfig]);
+
+        const launchPath = path.join(tempDir, '.vscode', 'launch.json');
+        const launchContent = JSON.parse(fs.readFileSync(launchPath, 'utf8'));
+        
+        const config = launchContent.configurations[0];
+        assert.strictEqual(config.name, 'Remote Python Attach');
+        assert.strictEqual(config.request, 'attach');
+        assert.strictEqual(config.host, '192.168.1.100');
+        assert.strictEqual(config.port, 3000);
+        assert.deepStrictEqual(config.pathMappings, [
+            {
+                localRoot: '${workspaceFolder}/src',
+                remoteRoot: '/app/src'
+            },
+            {
+                localRoot: '${workspaceFolder}/tests',
+                remoteRoot: '/app/tests'
+            }
+        ]);
+        assert.strictEqual(config.redirectOutput, true);
+        assert.strictEqual(config.justMyCode, false);
+        assert.strictEqual(config.stopOnEntry, true);
+    });
+
+    it('Should create attach mode with default port when not specified', async () => {
+        const intellijConfig: ParsedIntelliJConfig = {
+            name: 'Default Port Attach',
+            attachMode: true,
+            attachHost: 'remote-server'
+            // No port specified
+        };
+
+        await generator.syncToLaunchJson([intellijConfig]);
+
+        const launchPath = path.join(tempDir, '.vscode', 'launch.json');
+        const launchContent = JSON.parse(fs.readFileSync(launchPath, 'utf8'));
+        
+        const config = launchContent.configurations[0];
+        assert.strictEqual(config.host, 'remote-server');
+        assert.strictEqual(config.port, 5678); // Default port
+        assert.deepStrictEqual(config.connect, {
+            host: 'remote-server',
+            port: 5678
+        });
+    });
+
+    it('Should create attach mode with default host when not specified', async () => {
+        const intellijConfig: ParsedIntelliJConfig = {
+            name: 'Default Host Attach',
+            attachMode: true,
+            attachPort: 9999
+            // No host specified
+        };
+
+        await generator.syncToLaunchJson([intellijConfig]);
+
+        const launchPath = path.join(tempDir, '.vscode', 'launch.json');
+        const launchContent = JSON.parse(fs.readFileSync(launchPath, 'utf8'));
+        
+        const config = launchContent.configurations[0];
+        assert.strictEqual(config.host, 'localhost'); // Default host
+        assert.strictEqual(config.port, 9999);
+        assert.deepStrictEqual(config.connect, {
+            host: 'localhost',
+            port: 9999
+        });
+    });
+
+    it('Should handle mixed launch and attach configurations', async () => {
+        const intellijConfigs: ParsedIntelliJConfig[] = [
+            {
+                name: 'Launch Script',
+                scriptName: `${tempDir}/main.py`,
+                moduleMode: false
+            },
+            {
+                name: 'Attach Remote',
+                attachMode: true,
+                attachHost: 'localhost',
+                attachPort: 5678
+            }
+        ];
+
+        const syncedCount = await generator.syncToLaunchJson(intellijConfigs);
+        assert.strictEqual(syncedCount, 2);
+
+        const launchPath = path.join(tempDir, '.vscode', 'launch.json');
+        const launchContent = JSON.parse(fs.readFileSync(launchPath, 'utf8'));
+        
+        assert.strictEqual(launchContent.configurations.length, 2);
+        
+        const launchConfig = launchContent.configurations.find((c: any) => c.name === 'Launch Script');
+        const attachConfig = launchContent.configurations.find((c: any) => c.name === 'Attach Remote');
+        
+        // Verify launch config
+        assert.ok(launchConfig);
+        assert.strictEqual(launchConfig.request, 'launch');
+        assert.ok(launchConfig.program);
+        assert.strictEqual(launchConfig.host, undefined);
+        assert.strictEqual(launchConfig.port, undefined);
+        
+        // Verify attach config
+        assert.ok(attachConfig);
+        assert.strictEqual(attachConfig.request, 'attach');
+        assert.strictEqual(attachConfig.host, 'localhost');
+        assert.strictEqual(attachConfig.port, 5678);
+        assert.strictEqual(attachConfig.program, undefined);
+        assert.strictEqual(attachConfig.module, undefined);
+    });
+
+    it('Should handle all debugging options for attach mode', async () => {
+        const intellijConfig: ParsedIntelliJConfig = {
+            name: 'Full Options Attach',
+            attachMode: true,
+            attachHost: 'debug-server',
+            attachPort: 8080,
+            redirectOutput: false,
+            justMyCode: true,
+            stopOnEntry: false,
+            showReturnValue: true,
+            subProcess: true
+        };
+
+        await generator.syncToLaunchJson([intellijConfig]);
+
+        const launchPath = path.join(tempDir, '.vscode', 'launch.json');
+        const launchContent = JSON.parse(fs.readFileSync(launchPath, 'utf8'));
+        
+        const config = launchContent.configurations[0];
+        assert.strictEqual(config.redirectOutput, false);
+        assert.strictEqual(config.justMyCode, true);
+        assert.strictEqual(config.stopOnEntry, false);
+        assert.strictEqual(config.showReturnValue, true);
+        assert.strictEqual(config.subProcess, true);
+    });
 });
