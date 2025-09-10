@@ -2,9 +2,14 @@
     "name": "python-debug-sync",
     "displayName": "Python Debug Config Sync",
     "description": "Sync VS Code Python debug configs to IntelliJ",
-    "version": "0.0.3",
-    "repository": {},
+    "version": "0.0.4",
     "publisher": "ChristianPojoni",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/5queezer/python-vscode-intellij-sync.git"
+    },
+    "homepage": "https://github.com/5queezer/python-vscode-intellij-sync",
     "author": {
         "name": "Christian Pojoni",
         "email": "christian.pojoni@gmail.com"
